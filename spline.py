@@ -22,37 +22,35 @@ def spline_interpolation(P,G,Q):
     D = np.append(G, np.zeros(3))
     wv_ = np.linalg.solve(C,np.transpose(D))
     wv = wv_.reshape((1,len(wv_)))
-
     dist = cdist(P, Q, 'euclidean')
     X = np.append(dist, np.append(np.transpose(Q), np.ones((1, len(Q))), axis=0) , axis=0)
-    result = np.matmul(wv, X)
-
+    result = np.matmul(wv, -X)
     return(result)
 
 
 def warping(img, inputMark, outputMark):
     height = img.shape[0]
     width = img.shape[1]
-    inMark = inputMark.extend([(0,0), (0,width), (height,0), (height, width)])
-    outMark = outputMark.extend([(0,0), (0,width), (height,0), (height, width)]) 
-    g = np.array(get_g(inputMark, outputMark))
-    P = np.array(inputMark)
+    inMark = np.append(inputMark, [[0,0], [0,width-1], [height-1,0], [height-1, width-1]], axis=0)
+    outMark = np.append(outputMark, [[0,0], [0,width-1], [height-1,0], [height-1, width-1]], axis=0)
+    g = get_g(inMark, outMark)
+    P = inMark
 
-    Q_ = list((x, y) for x in range(0, width, 1) for y in range(0, height, 1))
-    for (x,y) in inMark:
-        Q_.remove((x,y))
-    Q = np.array(inputMark+Q_)
+    Q_ = list((x, y) for x in range(0, height, 1) for y in range(0, width, 1))
+    for i in range(inMark.shape[0] - 1):
+        Q_.remove((inMark[i,0], inMark[i,1]))
+    Q = np.append(inputMark, np.array(Q_),axis=0)
     Gx = g[:,0]
     Gy = g[:,1]
     X = spline_interpolation(P, Gx, Q)
     Y = spline_interpolation(P, Gy, Q)
 
     warpingImg = np.empty(img.shape, dtype=np.uint8)
+    print(warpingImg.shape)
     resultImg = np.empty(img.shape, dtype=np.uint8)
-
-    for i in range(width * height):
-        x, y = int(X[i]), int(Y[i])
-        warpingImg[y,x] = img[Q[i][0], Q[i][1]]
+    for i in range((width-1) * (height-1)):
+        x, y = np.clip(int(X[0][i]), 0, width-1), np.clip(int(Y[0][i]),0,height-1)
+        warpingImg[y,x] = img[int(Q[i][0]), int(Q[i][1])]
 
     # bilinear_interp(warpingImg, resultImg, scale)
 
