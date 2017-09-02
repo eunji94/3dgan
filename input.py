@@ -15,6 +15,13 @@ face_dataset = datasets.ImageFolder('train', transform=data_transform)
 dataset_loader = torch.utils.data.DataLoader(face_dataset,
                                              batch_size=4, shuffle=True,
                                              num_workers=4)
+
+for i, (input, target) in enumerate(dataset_loader):
+        input_var = torch.autograd.Variable(input)
+        target_var = torch.autograd.Variable(target)
+
+# reference : https://github.com/pytorch/examples/blob/master/imagenet/main.py#L97-L121
+
 """
 loader = transforms.Compose([
     transforms.ToTensor()])  # transform it into a torch tensor
